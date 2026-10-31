@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — unreleased
+## 0.1.0 — 2026-10-31
 
 First real version, ported from exosphere @ `0c35ddec`
 (`crates/exo/daemon/src/enforcement.rs`, the `pre_exec` path of
