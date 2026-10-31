@@ -8,7 +8,6 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/nixpt/zandbox"
 keywords = ["sandbox", "seccomp", "landlock", "namespaces", "cgroups"]
 categories = ["os::linux-apis"]
-publish = false
 
 [features]
 default = []
