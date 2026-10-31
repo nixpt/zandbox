@@ -1,0 +1,95 @@
+name: publish
+
+# Publishes zandbox to crates.io with Trusted Publishing (no long-lived token).
+# Runs when a vX.Y.Z tag is pushed, or by hand for a given tag. The tag's
+# version must equal Cargo.toml's; a version already on crates.io is skipped.
+#
+# One-time setup on crates.io (crate settings → Trusted Publishing):
+#   repository owner: nixpt · repository: zandbox · workflow: publish.yml
+#   environment: (leave empty)
+# Check it with: gh workflow run publish.yml -f verify_auth=true
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (vX.Y.Z); empty with verify_auth"
+        type: string
+        required: false
+      verify_auth:
+        description: "Only check that crates.io issues a Trusted Publishing token (no publish)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # Trusted Publishing exchanges the OIDC token for a crates.io token
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the tag
+        if: inputs.verify_auth != true
+        run: |
+          case "$RELEASE_TAG" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::publish needs a release tag (vX.Y.Z); got '$RELEASE_TAG'"; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.verify_auth == true && github.ref || format('refs/tags/{0}', env.RELEASE_TAG) }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Version matches the tag; skip if already published
+        id: check
+        if: inputs.verify_auth != true
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | python3 -c 'import sys,json; print(json.load(sys.stdin)["packages"][0]["version"])')
+          if [ "v$version" != "$RELEASE_TAG" ]; then
+            echo "::error::Cargo.toml version is $version but the tag is $RELEASE_TAG"; exit 1
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' -A 'zandbox-publish (github.com/nixpt/zandbox)' \
+            "https://crates.io/api/v1/crates/zandbox/$version")
+          if [ "$code" = 200 ]; then
+            echo "zandbox $version is already on crates.io; nothing to publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package (before fetching the token; it expires after 30 minutes)
+        if: inputs.verify_auth != true && steps.check.outputs.skip != 'true'
+        run: cargo package
+
+      - name: crates.io Trusted Publishing token
+        id: auth
+        if: inputs.verify_auth == true || steps.check.outputs.skip != 'true'
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Report Trusted Publishing status
+        if: inputs.verify_auth == true
+        env:
+          TP_TOKEN: ${{ steps.auth.outputs.token }}
+        run: |
+          if [ -n "$TP_TOKEN" ]; then
+            echo "Trusted Publishing OK: crates.io issued a token to this workflow"
+          else
+            echo "::error::crates.io issued no token; check zandbox's Trusted Publishing config (nixpt/zandbox, publish.yml)"; exit 1
+          fi
+
+      - name: Publish
+        if: inputs.verify_auth != true && steps.check.outputs.skip != 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish
