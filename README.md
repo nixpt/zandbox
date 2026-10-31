@@ -16,7 +16,15 @@ One `Profile` describes what to apply; callers decide what runs inside.
 Intended users: [buckets](https://github.com/nixpt/buckets) (on top of bwrap),
 exo-light's subprocess backend, and antarikshya's mandala native adapter.
 
-**Status:** 0.1.0, unreleased (`publish = false`). Linux only.
+[![crates.io](https://img.shields.io/crates/v/zandbox.svg)](https://crates.io/crates/zandbox)
+[![docs.rs](https://docs.rs/zandbox/badge.svg)](https://docs.rs/zandbox)
+[![ci](https://github.com/nixpt/zandbox/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nixpt/zandbox/actions/workflows/ci.yml)
+
+**Status:** 0.1.0, published on [crates.io](https://crates.io/crates/zandbox) (2026-10-31). Linux only.
+
+```bash
+cargo add zandbox
+```
 
 ## Usage
 
@@ -141,9 +149,9 @@ module's docs.
 Releases are published to crates.io by `.github/workflows/publish.yml` with
 [Trusted Publishing](https://crates.io/docs/trusted-publishing) (no long-lived token).
 
-- **One-time setup:** on crates.io, open zandbox → Settings → Trusted Publishing and
-  add repository owner `nixpt`, repository `zandbox`, workflow `publish.yml`, no
-  environment. Check it with `gh workflow run publish.yml -f verify_auth=true`.
+- **Trusted Publishing** is configured on crates.io (owner `nixpt`, repository
+  `zandbox`, workflow `publish.yml`, no environment). Check it with
+  `gh workflow run publish.yml -f verify_auth=true`.
 - **A release:** bump `version` in `Cargo.toml`, add the CHANGELOG entry, merge to
   `main`, then push a matching tag:
   `git tag -a v0.2.0 -m "zandbox 0.2.0" && git push origin v0.2.0`.
