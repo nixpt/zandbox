@@ -1,0 +1,13 @@
+[package]
+name = "zandbox"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.80"
+description = "Linux process sandboxing applied from pre_exec: namespaces, capability drop, landlock, seccomp, cgroup v2 limits, a clean environment, fail-closed by choice."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nixpt/zandbox"
+keywords = ["sandbox", "seccomp", "landlock", "namespaces", "cgroups"]
+categories = ["os::linux-apis"]
+publish = false
+
+[dependencies]
