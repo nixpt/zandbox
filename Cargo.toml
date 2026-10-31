@@ -1,6 +1,6 @@
 [package]
 name = "zandbox"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
 rust-version = "1.80"
 description = "Linux process sandboxing applied from pre_exec: namespaces, capability drop, landlock, seccomp, cgroup v2 limits, a clean environment, fail-closed by choice."
@@ -10,4 +10,13 @@ keywords = ["sandbox", "seccomp", "landlock", "namespaces", "cgroups"]
 categories = ["os::linux-apis"]
 publish = false
 
+[features]
+default = []
+## (De)serialize `Profile` and its parts.
+serde = ["dep:serde", "caps/serde_support"]
+
 [dependencies]
+libc = "0.2.160"
+caps = "0.5.5"
+thiserror = "2"
+serde = { version = "1", features = ["derive"], optional = true }
