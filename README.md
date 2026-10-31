@@ -136,6 +136,21 @@ Its authors consented to it being licensed MIT OR Apache-2.0 in zandbox. What
 changed while porting is listed in [CHANGELOG.md](CHANGELOG.md) and in each
 module's docs.
 
+## Releasing
+
+Releases are published to crates.io by `.github/workflows/publish.yml` with
+[Trusted Publishing](https://crates.io/docs/trusted-publishing) (no long-lived token).
+
+- **One-time setup:** on crates.io, open zandbox → Settings → Trusted Publishing and
+  add repository owner `nixpt`, repository `zandbox`, workflow `publish.yml`, no
+  environment. Check it with `gh workflow run publish.yml -f verify_auth=true`.
+- **A release:** bump `version` in `Cargo.toml`, add the CHANGELOG entry, merge to
+  `main`, then push a matching tag:
+  `git tag -a v0.2.0 -m "zandbox 0.2.0" && git push origin v0.2.0`.
+  The workflow refuses a tag that doesn't match `Cargo.toml`, and skips a version
+  that's already on crates.io. It can be re-run by hand with
+  `gh workflow run publish.yml -f tag=v0.2.0`.
+
 ## License
 
 Licensed under either of [MIT](LICENSE-MIT) or [Apache License 2.0](LICENSE-APACHE)

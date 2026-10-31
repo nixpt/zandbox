@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      # Ubuntu 24.04 runners restrict unprivileged user namespaces through
+      # AppArmor; zandbox's namespace tests need them (as on a normal host).
+      - name: Allow unprivileged user namespaces
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          sudo sysctl -w kernel.unprivileged_userns_clone=1 || true
+      - name: Kernel features
+        run: |
+          uname -r
+          cat /sys/kernel/security/lsm || true
+          cat /sys/fs/cgroup/cgroup.controllers || true
+      - run: cargo test
+      - run: cargo test --features serde
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --all-targets --features serde -- -D warnings
+      - run: cargo doc --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read rust-version
+        id: msrv
+        run: echo "v=$(grep -m1 '^rust-version' Cargo.toml | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.v }}
+      - run: cargo check --all-targets
